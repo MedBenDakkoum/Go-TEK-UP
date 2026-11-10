@@ -1,0 +1,3 @@
+import { handler } from '@/presentation/http/route';
+
+export const POST = handler({}, ({ c, user, id }) => c.useCases.requests.complete(user, id()));
