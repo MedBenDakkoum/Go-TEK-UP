@@ -8,3 +8,5 @@ data/
 next-env.d.ts
 coverage/
 src/infrastructure/prisma/generated/
+prisma/
+prisma.config.ts

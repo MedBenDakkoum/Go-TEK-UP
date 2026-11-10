@@ -6,6 +6,7 @@ import { Bell, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../providers/auth';
 import { useRealtime } from '../providers/realtime';
 import { ThemeToggle } from '../providers/theme';
+import Image from "next/image";
 
 /** Logo CampusConnect (symbole original : chevrons « up ») ; le logo officiel de l'école s'affiche s'il est fourni. */
 export function BrandMark() {
@@ -20,9 +21,16 @@ export function BrandMark() {
 
 /** Logo officiel de l'école : s'affiche seulement si le fichier public/tek-up-logo.png existe. */
 function SchoolLogo() {
-  const [ok, setOk] = useState(false);
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/tek-up-logo.png" alt="Tek-Up University" className="school-logo" hidden={!ok} onLoad={() => setOk(true)} onError={() => setOk(false)} />;
+  return (
+    <Image
+      src="/go-tek-up-logo.jpg"
+      alt="Go-TEK-UP University"
+      width={185}
+      height={75}
+      priority
+      className="brand-logo"
+    />
+  );
 }
 
 const isActive = (path: string, to: string, exact = false) => (exact ? path === to : path === to || path.startsWith(to + '/'));
@@ -69,11 +77,9 @@ export default function Shell({ children }: { children: ReactNode }) {
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); main.current?.focus(); }}>Aller au contenu</a>
       <header className="site-header">
         <div className="container bar">
-          <Link href="/" className="brand" aria-label="CampusConnect, accueil">
-            <BrandMark />
-            <span className="brand-text">CampusConnect<small>Tek-Up University</small></span>
+          <Link href="/" className="brand" aria-label="Go-TEK-UP, accueil">
+            <SchoolLogo />
           </Link>
-          <SchoolLogo />
           <div className="bar-tools">
             {user && <UserNav />}
             <ThemeToggle />
@@ -93,7 +99,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="main" ref={main} className="container main" tabIndex={-1}>{children}</main>
-      <footer className="site-footer"><div className="container">CampusConnect · Tek-Up University</div></footer>
+      <footer className="site-footer"><div className="container">Go-TEK-UP · Tek-Up University</div></footer>
     </>
   );
 }
