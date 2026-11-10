@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
+      POSTGRES_DB: ${DB_NAME:-campus}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Pour consulter la base depuis votre PC (DBeaver, Prisma Studio…).
+      # 5433 côté PC évite le conflit si PostgreSQL est installé sur votre machine.
+      - "${DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-campus}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      # Dans Docker, l'hôte de la base est « db » (jamais localhost) et le port interne est 5432
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-root}@db:5432/${DB_NAME:-campus}
+      JWT_SECRET: ${JWT_SECRET:?Définissez JWT_SECRET dans le fichier .env}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS-tek-up.de,tek-up.tn}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-true}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-CampusConnect <no-reply@campusconnect.local>}
+
+volumes:
+  pgdata:
