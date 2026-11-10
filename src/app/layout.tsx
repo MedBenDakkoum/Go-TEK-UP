@@ -6,9 +6,13 @@ import { Providers } from '@/ui/providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'CampusConnect — entraide entre étudiants', template: '%s · CampusConnect' },
-  description: 'CampusConnect : entraide et partage entre étudiants.',
+  title: {
+    default: 'Go-TEK-UP',
+    template: '%s | Go-TEK-UP',
+  },
+  description: 'Go-TEK-UP — A collaborative platform for the Tek-Up University community.',
 };
+
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
