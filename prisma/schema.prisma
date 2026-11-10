@@ -1,0 +1,275 @@
+// Schéma de données CampusConnect (PostgreSQL).
+// Le client généré est placé dans la couche infrastructure : seules les implémentations de dépôts (adapters) l'utilisent.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  student
+  admin
+}
+
+enum RequestStatus {
+  open
+  accepted
+  done
+  cancelled
+}
+
+enum OfferStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum ReportStatus {
+  open
+  resolved
+}
+
+enum PlanStatus {
+  proposed
+  confirmed
+}
+
+enum GroupStatus {
+  open
+  cancelled
+}
+
+enum TokenPurpose {
+  reset
+  verify
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique // toujours stocké en minuscules
+  passwordHash    String    @map("password_hash")
+  role            Role      @default(student)
+  speciality      String    @default("")
+  level           String    @default("ING1")
+  skills          String    @default("")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  suspended       Boolean   @default(false)
+  suspendedReason String    @default("") @map("suspended_reason")
+  suspendedAt     DateTime? @map("suspended_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  requests         Request[]
+  offers           Offer[]
+  reviewsGiven     Review[]       @relation("ReviewReviewer")
+  reviewsReceived  Review[]       @relation("ReviewReviewee")
+  reports          Report[]
+  plansProposed    SessionPlan[]
+  hostedSessions   GroupSession[]
+  memberships      GroupMember[]
+  notifications    Notification[]
+  messages         Message[]
+  authTokens       AuthToken[]
+  adminActions     AdminAction[]
+  remindersSent    ReminderSent[]
+
+  @@map("users")
+}
+
+model Request {
+  id           Int           @id @default(autoincrement())
+  authorId     Int           @map("author_id")
+  title        String
+  description  String
+  subject      String
+  level        String
+  availability String
+  status       RequestStatus @default(open)
+  hidden       Boolean       @default(false)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  author   User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  offers   Offer[]
+  reviews  Review[]
+  reports  Report[]
+  plan     SessionPlan?
+  messages Message[]
+
+  @@index([status, hidden])
+  @@index([authorId])
+  @@map("requests")
+}
+
+model Offer {
+  id        Int         @id @default(autoincrement())
+  requestId Int         @map("request_id")
+  helperId  Int         @map("helper_id")
+  message   String
+  status    OfferStatus @default(pending)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  helper  User    @relation(fields: [helperId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, helperId])
+  @@index([helperId])
+  @@map("offers")
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  requestId  Int      @map("request_id")
+  reviewerId Int      @map("reviewer_id")
+  revieweeId Int      @map("reviewee_id")
+  rating     Int
+  comment    String   @default("")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request  Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  reviewer User    @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User    @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, reviewerId])
+  @@index([revieweeId])
+  @@map("reviews")
+}
+
+model Report {
+  id         Int          @id @default(autoincrement())
+  requestId  Int          @map("request_id")
+  reporterId Int          @map("reporter_id")
+  reason     String
+  status     ReportStatus @default(open)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request  Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  reporter User    @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, reporterId])
+  @@map("reports")
+}
+
+/// Séance individuelle d'une demande acceptée. `startsAt` : heure locale « AAAA-MM-JJ HH:MM » (Tunisie, UTC+1).
+model SessionPlan {
+  id         Int        @id @default(autoincrement())
+  requestId  Int        @unique @map("request_id")
+  proposedBy Int        @map("proposed_by")
+  startsAt   String     @map("starts_at")
+  location   String
+  status     PlanStatus @default(proposed)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime   @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  request  Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  proposer User    @relation(fields: [proposedBy], references: [id], onDelete: Cascade)
+
+  @@map("session_plans")
+}
+
+model GroupSession {
+  id          Int         @id @default(autoincrement())
+  hostId      Int         @map("host_id")
+  title       String
+  description String
+  subject     String
+  level       String
+  startsAt    String      @map("starts_at")
+  location    String
+  capacity    Int
+  status      GroupStatus @default(open)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  host    User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  members GroupMember[]
+
+  @@map("group_sessions")
+}
+
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  sessionId Int      @map("session_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  session GroupSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@map("group_members")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String
+  message   String
+  link      String   @default("")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @map("request_id")
+  senderId  Int      @map("sender_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender  User    @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, id])
+  @@map("messages")
+}
+
+/// Jetons à usage unique (vérification d'e-mail, mot de passe oublié) : seul le hachage SHA-256 est stocké.
+model AuthToken {
+  id        Int          @id @default(autoincrement())
+  userId    Int          @map("user_id")
+  purpose   TokenPurpose
+  tokenHash String       @unique @map("token_hash")
+  expiresAt DateTime     @map("expires_at") @db.Timestamptz(3)
+  used      Boolean      @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_tokens")
+}
+
+model AdminAction {
+  id         Int      @id @default(autoincrement())
+  adminId    Int      @map("admin_id")
+  action     String
+  targetType String   @map("target_type")
+  targetId   Int?     @map("target_id")
+  details    String   @default("")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("admin_actions")
+}
+
+/// Rappels de séance déjà envoyés (un par personne, par séance et par type : « day » ou « hour »).
+model ReminderSent {
+  kind   String
+  refId  Int      @map("ref_id")
+  userId Int      @map("user_id")
+  type   String
+  sentAt DateTime @default(now()) @map("sent_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([kind, refId, userId, type])
+  @@map("reminders_sent")
+}
