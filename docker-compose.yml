@@ -4,19 +4,20 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
-      POSTGRES_DB: ${DB_NAME:-campus}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tekdb}
+      POSTGRES_DB: ${DB_NAME:-TEK_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      # Pour consulter la base depuis votre PC (DBeaver, Prisma Studio…).
-      # 5433 côté PC évite le conflit si PostgreSQL est installé sur votre machine.
-      - "${DB_PORT:-5433}:5432"
+      # Uniquement en local (127.0.0.1) : 5433 côté PC, 5432 dans le conteneur.
+      # 5433 évite le conflit si un PostgreSQL natif écoute déjà sur 5432.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-campus}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-TEK_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
   app:
     build: .
@@ -27,21 +28,21 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Dans Docker, l'hôte de la base est « db » (jamais localhost) et le port interne est 5432
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-root}@db:5432/${DB_NAME:-campus}
+      # Dans Docker, l'hôte de la base est « db » (jamais localhost) et le port interne est 5432.
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-tekdb}@db:5432/${DB_NAME:-TEK_DB}
       JWT_SECRET: ${JWT_SECRET:?Définissez JWT_SECRET dans le fichier .env}
       APP_URL: ${APP_URL:-http://localhost:3000}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SEED_DEMO: ${SEED_DEMO:-true}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS-tek-up.de,tek-up.tn}
-      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-true}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-tek-up.de,tek-up.tn,campus.tn,gmail.com}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      MAIL_FROM: ${MAIL_FROM:-CampusConnect <no-reply@campusconnect.local>}
+      MAIL_FROM: ${MAIL_FROM:-Go-TEK-UP <no-reply@go-tek-up.local>}
 
 volumes:
   pgdata:

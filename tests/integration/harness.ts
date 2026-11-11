@@ -8,7 +8,7 @@ import { seedDemo } from '@/infrastructure/seed';
 import { NodemailerMailer } from '@/infrastructure/mail/mailer';
 import type { AuthUser } from '@/domain';
 
-export const TEST_DB = process.env.TEST_DATABASE_URL ?? 'postgresql://campus:campus@localhost:5432/cc_test';
+export const TEST_DB = process.env.TEST_DATABASE_URL ?? 'postgresql://postgres:tekdb@127.0.0.1:5433/TEK_DB_TEST';
 
 /** Repart d'un schéma vide : applique les migrations Prisma (fichiers SQL) puis les données de démonstration. */
 export async function freshContainer(): Promise<Container> {

@@ -1,8 +1,8 @@
 {
-  "name": "campusconnect",
+  "name": "go-tek-up",
   "version": "2.0.0",
   "private": true,
-  "description": "CampusConnect : Next.js + React, clean architecture, Prisma + PostgreSQL",
+  "description": "Go-TEK-UP : plateforme d'entraide étudiante — Next.js + React, clean architecture, Prisma + PostgreSQL",
   "engines": {
     "node": ">=20.19"
   },

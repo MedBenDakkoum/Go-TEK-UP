@@ -11,8 +11,8 @@ export function createAuthUseCases(d: Deps) {
     const token = await issueToken(userId, 'verify', 24 * 3600e3);
     await d.mailer.send(
       email,
-      'CampusConnect : confirmez votre adresse e-mail',
-      `Bonjour,\n\nPour activer votre compte CampusConnect (lien valable 24 heures) :\n${d.config.appUrl()}/verify-email?token=${token}\n\nSi vous n’êtes pas à l’origine de cette inscription, ignorez ce message.`,
+      'Go-TEK-UP : confirmez votre adresse e-mail',
+      `Bonjour,\n\nPour activer votre compte Go-TEK-UP (lien valable 24 heures) :\n${d.config.appUrl()}/verify-email?token=${token}\n\nSi vous n’êtes pas à l’origine de cette inscription, ignorez ce message.`,
     );
   }
 
@@ -86,7 +86,7 @@ export function createAuthUseCases(d: Deps) {
       const token = await issueToken(u.id, 'reset', 3600e3);
       await d.mailer.send(
         email,
-        'CampusConnect : réinitialisation du mot de passe',
+        'Go-TEK-UP : réinitialisation du mot de passe',
         `Bonjour,\n\nPour choisir un nouveau mot de passe (lien valable 1 heure) :\n${d.config.appUrl()}/reset-password?token=${token}\n\nSi vous n’êtes pas à l’origine de cette demande, ignorez ce message.`,
       );
     },

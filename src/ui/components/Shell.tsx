@@ -8,7 +8,7 @@ import { useRealtime } from '../providers/realtime';
 import { ThemeToggle } from '../providers/theme';
 import Image from "next/image";
 
-/** Logo CampusConnect (symbole original : chevrons « up ») ; le logo officiel de l'école s'affiche s'il est fourni. */
+/** Symbole Go-TEK-UP (chevrons « up ») ; le logo officiel s'affiche s'il est fourni. */
 export function BrandMark() {
   return (
     <svg className="brand-svg" viewBox="0 0 32 32" aria-hidden="true" focusable="false">

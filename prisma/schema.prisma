@@ -1,4 +1,4 @@
-// Schéma de données CampusConnect (PostgreSQL).
+// Schéma de données Go-TEK-UP (PostgreSQL).
 // Le client généré est placé dans la couche infrastructure : seules les implémentations de dépôts (adapters) l'utilisent.
 
 generator client {

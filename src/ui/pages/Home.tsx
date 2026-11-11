@@ -29,7 +29,7 @@ function Stats() {
   if (!data) return null;
   const items: [number, string][] = [[data.students, 'étudiants inscrits'], [data.openRequests, 'demandes ouvertes'], [data.sessionsDone, 'séances réalisées']];
   return (
-    <ul className="live-stats" aria-label="CampusConnect en chiffres">
+    <ul className="live-stats" aria-label="Go-TEK-UP en chiffres">
       {items.map(([n, l]) => <li key={l}><strong>{n}</strong> {l}</li>)}
     </ul>
   );

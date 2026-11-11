@@ -8,7 +8,7 @@ export class BcryptHasher implements PasswordHasher {
   private dummy?: string;
   hash(plain: string) { return bcrypt.hash(plain, 10); }
   async verify(plain: string, hash: string | null | undefined) {
-    this.dummy ??= bcrypt.hashSync('campusconnect-dummy', 10);
+    this.dummy ??= bcrypt.hashSync('go-tek-up-dummy', 10);
     const ok = await bcrypt.compare(plain, hash ?? this.dummy);
     return hash ? ok : false;
   }

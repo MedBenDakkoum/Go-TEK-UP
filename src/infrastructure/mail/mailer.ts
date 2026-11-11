@@ -25,7 +25,7 @@ export class NodemailerMailer implements Mailer {
       return;
     }
     try {
-      await this.transport.sendMail({ from: process.env.MAIL_FROM || 'CampusConnect <no-reply@campusconnect.local>', to, subject, text });
+      await this.transport.sendMail({ from: process.env.MAIL_FROM || 'Go-TEK-UP <no-reply@go-tek-up.local>', to, subject, text });
     } catch (e) {
       console.error(`[Mail] Échec d'envoi à ${to} : ${(e as Error).message}`);
     }

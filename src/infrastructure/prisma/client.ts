@@ -6,7 +6,7 @@ export type Db = PrismaClient | Prisma.TransactionClient;
 
 export function createPrismaClient(connectionString = process.env.DATABASE_URL): PrismaClient {
   if (!connectionString) {
-    throw new Error('DATABASE_URL manquant : définissez-le dans le fichier .env (ex. postgresql://campus:campus@localhost:5432/campusconnect).');
+    throw new Error('DATABASE_URL manquant : définissez-le dans le fichier .env (ex. postgresql://postgres:tekdb@127.0.0.1:5433/TEK_DB).');
   }
   return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 }

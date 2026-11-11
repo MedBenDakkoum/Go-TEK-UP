@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CampusConnect — thème « Tek-Up » : bleu, gris et blanc.
+   Go-TEK-UP — thème « Tek-Up » : bleu, gris et blanc.
    Les couleurs de l'école (bleu, gris, blanc) sont reprises sous forme de palette ; les valeurs exactes
    ne sont pas officielles. Pour les ajuster, il suffit de modifier les variables de :root ci-dessous.
    ========================================================================== */
@@ -90,7 +90,7 @@ a { color: var(--primary); text-underline-offset: 3px; }
 :root[data-theme="dark"] .bell-count { color: #1a0a0b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bell-count { color: #1a0a0b; } }
 @media (min-width: 900px) {
-  .menu-btn { display: none; }
+  .menu-btn.btn { display: none; }
   .nav { display: flex; flex-direction: row; align-items: center; width: auto; order: 1; flex: 1; padding: 0; margin-left: .5rem; flex-wrap: wrap; }
   .bar-tools { order: 2; }
 }
