@@ -30,6 +30,7 @@ export function createRepositories(db: Db): Repositories {
     findByEmail: (email) => db.user.findUnique({ where: { email: email.trim().toLowerCase() } }),
     create: (data) => db.user.create({ data: { ...data, email: data.email.trim().toLowerCase() } }),
     async update(id, patch) { await db.user.update({ where: { id }, data: patch }); },
+    async delete(id) { await db.user.deleteMany({ where: { id } }); },
     async hasAdmin() { return (await db.user.count({ where: { role: 'admin' } })) > 0; },
     count: () => db.user.count(),
   };
@@ -166,6 +167,13 @@ export function createRepositories(db: Db): Repositories {
         await tx.authToken.create({ data: { userId, purpose, tokenHash, expiresAt } });
       });
     },
+    async create({ userId, purpose, tokenHash, expiresAt }) {
+      return (await db.authToken.create({ data: { userId, purpose, tokenHash, expiresAt }, select: { id: true } })).id;
+    },
+    async invalidateOlder(userId, purpose, beforeId) {
+      await db.authToken.updateMany({ where: { userId, purpose, used: false, id: { lt: beforeId } }, data: { used: true } });
+    },
+    async deleteById(id) { await db.authToken.deleteMany({ where: { id } }); },
     async consume(tokenHash, purpose, now) {
       // Mise à jour conditionnelle : une seule requête peut « gagner » le jeton, même en cas d'appels simultanés.
       const res = await db.authToken.updateMany({ where: { tokenHash, purpose, used: false, expiresAt: { gt: now } }, data: { used: true } });

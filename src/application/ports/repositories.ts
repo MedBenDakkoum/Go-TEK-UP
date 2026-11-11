@@ -14,6 +14,8 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   create(data: { name: string; email: string; passwordHash: string; role?: Role; speciality: string; level: string; skills: string; emailVerified: boolean }): Promise<User>;
   update(id: number, patch: Partial<Pick<User, 'name' | 'speciality' | 'level' | 'skills' | 'passwordHash' | 'emailVerified' | 'suspended' | 'suspendedReason' | 'suspendedAt'>>): Promise<void>;
+  /** Supprime un compte (utilisé pour annuler une inscription dont l'e-mail de vérification n'a pas pu partir). */
+  delete(id: number): Promise<void>;
   hasAdmin(): Promise<boolean>;
   count(): Promise<number>;
 }
@@ -93,8 +95,14 @@ export interface NotificationRepository {
 }
 
 export interface AuthTokenRepository {
-  /** Invalide les jetons actifs du même usage puis enregistre le nouveau (atomique). */
+  /** Invalide les jetons actifs du même usage puis enregistre le nouveau (atomique, utilisé pour les réinitialisations). */
   issue(data: { userId: number; purpose: TokenPurpose; tokenHash: string; expiresAt: Date }): Promise<void>;
+  /** Enregistre un jeton sans invalider les autres jetons actifs ; retourne son identifiant. */
+  create(data: { userId: number; purpose: TokenPurpose; tokenHash: string; expiresAt: Date }): Promise<number>;
+  /** Invalide les jetons actifs du même usage créés avant `beforeId` (après un envoi réussi). */
+  invalidateOlder(userId: number, purpose: TokenPurpose, beforeId: number): Promise<void>;
+  /** Supprime un jeton dont l'e-mail n'a pas pu être envoyé (aucun impact sur les jetons précédents). */
+  deleteById(id: number): Promise<void>;
   /** Marque le jeton comme utilisé et retourne l'utilisateur, de façon atomique ; null s'il est inconnu, expiré ou déjà utilisé. */
   consume(tokenHash: string, purpose: TokenPurpose, now: Date): Promise<number | null>;
 }

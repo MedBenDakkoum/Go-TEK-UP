@@ -272,3 +272,9 @@ code { background: var(--sky); padding: .05rem .35rem; border-radius: 4px; }
   object-fit: contain;
   display: block;
 }
+
+/* Logo à fond clair : conserve une tuile lisible lorsque le thème est sombre. */
+:root[data-theme="dark"] .brand-logo { background: #fff; border-radius: 8px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-logo { background: #fff; border-radius: 8px; }
+}

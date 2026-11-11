@@ -1,5 +1,6 @@
-import { conflict, fieldError, ForbiddenError, BadInputError, TooManyAttemptsError, UnauthorizedError } from '../../domain/errors';
+import { conflict, DomainError, fieldError, ForbiddenError, BadInputError, TooManyAttemptsError, UnauthorizedError } from '../../domain/errors';
 import { normalizeSkills, type AuthUser } from '../../domain/user';
+import { verificationEmail } from '../services/email-templates';
 import type { Deps } from '../deps';
 import type { LoginInput, RegisterInput, ResetInput } from '../validation/schemas';
 import { toPublicUser } from './users';
@@ -7,14 +8,8 @@ import { toPublicUser } from './users';
 export function createAuthUseCases(d: Deps) {
   const { repos } = d;
 
-  async function sendVerification(userId: number, email: string) {
-    const token = await issueToken(userId, 'verify', 24 * 3600e3);
-    await d.mailer.send(
-      email,
-      'Go-TEK-UP : confirmez votre adresse e-mail',
-      `Bonjour,\n\nPour activer votre compte Go-TEK-UP (lien valable 24 heures) :\n${d.config.appUrl()}/verify-email?token=${token}\n\nSi vous n’êtes pas à l’origine de cette inscription, ignorez ce message.`,
-    );
-  }
+  const consumeToken = (token: string, purpose: 'reset' | 'verify') =>
+    repos.authTokens.consume(d.secureTokens.hash(token), purpose, d.clock.now());
 
   async function issueToken(userId: number, purpose: 'reset' | 'verify', ttlMs: number) {
     const token = d.secureTokens.random();
@@ -22,8 +17,23 @@ export function createAuthUseCases(d: Deps) {
     return token;
   }
 
-  const consumeToken = (token: string, purpose: 'reset' | 'verify') =>
-    repos.authTokens.consume(d.secureTokens.hash(token), purpose, d.clock.now());
+  async function sendVerification(userId: number, email: string, name: string) {
+    const token = d.secureTokens.random();
+    const expiresAt = new Date(d.clock.now().getTime() + 24 * 3600e3);
+    // Le nouveau jeton est stocké avant l'envoi, mais les anciens restent valides tant que l'envoi n'a pas réussi.
+    const tokenId = await repos.authTokens.create({ userId, purpose: 'verify', tokenHash: d.secureTokens.hash(token), expiresAt });
+    try {
+      const content = verificationEmail({ name, link: `${d.config.appUrl()}/verify-email?token=${encodeURIComponent(token)}` });
+      await d.mailer.send(email, content.subject, content.text, content.html);
+    } catch (e) {
+      // Envoi échoué : on supprime uniquement le nouveau jeton, le lien précédent reste utilisable.
+      await repos.authTokens.deleteById(tokenId).catch((err) => console.error('[Auth] Suppression du jeton non envoyé échouée :', (err as Error).message));
+      throw e;
+    }
+    // Envoi réussi : les jetons de vérification plus anciens deviennent inutilisables, sans toucher aux plus récents.
+    await repos.authTokens.invalidateOlder(userId, 'verify', tokenId)
+      .catch((err) => console.error('[Auth] Invalidation des anciens jetons échouée :', (err as Error).message));
+  }
 
   return {
     /** Crée le compte. Si une vérification d'e-mail est requise, aucune session n'est ouverte avant la confirmation. */
@@ -40,7 +50,18 @@ export function createAuthUseCases(d: Deps) {
         name: input.name, email: input.email, passwordHash: await d.hasher.hash(input.password),
         speciality: input.speciality, level: input.level, skills: normalizeSkills(input.skills), emailVerified: !verify,
       });
-      if (verify) await sendVerification(user.id, input.email);
+      if (verify) {
+        try {
+          await sendVerification(user.id, input.email, user.name);
+        } catch {
+          // Inscription atomique : sans e-mail envoyé, on retire le compte pour permettre un nouvel essai.
+          await repos.users.delete(user.id).catch((e) => console.error('[Auth] Nettoyage du compte échoué :', (e as Error).message));
+          throw new DomainError(
+            'L’e-mail de confirmation n’a pas pu être envoyé. Vérifiez votre adresse e-mail puis réessayez dans quelques minutes.',
+            'EMAIL_DELIVERY_FAILED',
+          );
+        }
+      }
       return { id: user.id, pendingVerification: verify };
     },
 
@@ -74,7 +95,10 @@ export function createAuthUseCases(d: Deps) {
       if (d.mailLimiter.blocked(key)) return;
       d.mailLimiter.add(key);
       const u = await repos.users.findByEmail(email);
-      if (u && !u.emailVerified) await sendVerification(u.id, email);
+      if (u && !u.emailVerified) {
+        // Réponse volontairement identique en cas d'échec SMTP (pas d'énumération des comptes).
+        await sendVerification(u.id, email, u.name).catch(() => undefined);
+      }
     },
 
     async forgotPassword(email: string): Promise<void> {
@@ -84,11 +108,16 @@ export function createAuthUseCases(d: Deps) {
       const u = await repos.users.findByEmail(email);
       if (!u) return;
       const token = await issueToken(u.id, 'reset', 3600e3);
-      await d.mailer.send(
-        email,
-        'Go-TEK-UP : réinitialisation du mot de passe',
-        `Bonjour,\n\nPour choisir un nouveau mot de passe (lien valable 1 heure) :\n${d.config.appUrl()}/reset-password?token=${token}\n\nSi vous n’êtes pas à l’origine de cette demande, ignorez ce message.`,
-      );
+      try {
+        await d.mailer.send(
+          email,
+          'Go-TEK-UP : réinitialisation du mot de passe',
+          `Bonjour,\n\nPour choisir un nouveau mot de passe (lien valable 1 heure) :\n${d.config.appUrl()}/reset-password?token=${encodeURIComponent(token)}\n\nSi vous n’êtes pas à l’origine de cette demande, ignorez ce message.`,
+        );
+      } catch {
+        // Même réponse au client ; le jeton créé est invalidé pour ne pas rester orphelin.
+        await consumeToken(token, 'reset').catch(() => undefined);
+      }
     },
 
     async resetPassword(input: ResetInput): Promise<void> {
@@ -109,6 +138,8 @@ export function createAuthUseCases(d: Deps) {
       const u = await repos.users.findById(id);
       if (!u) return { user: null, suspended: false };
       if (u.suspended) return { user: null, suspended: true };
+      // Une session existante ne doit pas contourner une vérification d'e-mail devenue obligatoire.
+      if (d.config.requireEmailVerification() && !u.emailVerified) return { user: null, suspended: false };
       const { id: uid, name, email, role, speciality, level, skills } = u;
       return { user: { id: uid, name, email, role, speciality, level, skills }, suspended: false };
     },

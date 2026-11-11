@@ -26,14 +26,24 @@ Variables principales :
 | `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | identifiants de la base créée par Docker (`postgres` / `tekdb` / `TEK_DB` / `5433`) |
 | `DATABASE_URL` | connexion de l'application lancée hors Docker : `postgresql://postgres:tekdb@127.0.0.1:5433/TEK_DB` |
 | `JWT_SECRET` | secret des sessions : **à générer** |
-| `APP_URL` | adresse du site (`http://localhost:3000` en local) |
+| `APP_URL` | URL publique exacte, sans slash final (ex. `https://go-tek-up.vercel.app`). Sur Vercel, le domaine de production sert de repli si elle est absente. |
 | `ALLOWED_EMAIL_DOMAINS` | domaines acceptés à l'inscription (vide = tous) |
-| `REQUIRE_EMAIL_VERIFICATION` | `false` en local pour ne pas exiger la confirmation par e-mail |
+| `REQUIRE_EMAIL_VERIFICATION` | `false` en local ; **toujours activée en production** |
 | `SEED_DEMO` | `true` crée les données de démonstration |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | crée un administrateur (utile avec `SEED_DEMO=false`) |
-| `SMTP_*`, `MAIL_FROM` | envoi réel d'e-mails ; vides, ils s'affichent dans la console |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | envoi réel des e-mails (Gmail : `smtp.gmail.com`, port `587`) |
 
 > `.env` n'est jamais commité. Le secret JWT ne doit pas être partagé.
+
+### Gmail SMTP (vérification d'e-mail réelle)
+
+1. Activer la validation en 2 étapes sur le compte Gmail.
+2. Créer un **mot de passe d'application** (16 caractères, à coller sans espaces) et le mettre dans `SMTP_PASS` (jamais le mot de passe principal).
+3. `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER=adresse@gmail.com`.
+4. `MAIL_FROM` doit contenir l'adresse de `SMTP_USER` (ou un alias vérifié), sinon Gmail refuse l'expéditeur.
+5. En production : `APP_URL=https://<domaine>.vercel.app` et `REQUIRE_EMAIL_VERIFICATION=true`.
+
+Sans SMTP (développement uniquement), le lien de vérification est écrit dans la console. En production, l'absence de SMTP fait échouer l'inscription avec un message explicite plutôt que de créer un compte non vérifiable.
 
 ## Lancer le projet
 

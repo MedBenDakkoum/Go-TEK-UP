@@ -19,11 +19,11 @@ export function BrandMark() {
   );
 }
 
-/** Logo officiel de l'école : s'affiche seulement si le fichier public/tek-up-logo.png existe. */
+/** Logo officiel de l'école : s'affiche seulement si le fichier public/go-tek-up-logo.png existe. */
 function SchoolLogo() {
   return (
     <Image
-      src="/go-tek-up-logo.jpg"
+      src="/go-tek-up-logo.png"
       alt="Go-TEK-UP University"
       width={185}
       height={75}
