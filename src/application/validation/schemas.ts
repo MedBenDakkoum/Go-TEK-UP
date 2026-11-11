@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LEVELS, SUBJECTS } from '../../domain/constants';
+import { LEVELS, SUBJECTS, SUBJECT_MAX_LENGTH } from '../../domain/constants';
 
 /**
  * Schémas de validation des entrées (source unique côté serveur). `strictObject` refuse les champs inconnus.
@@ -10,6 +10,9 @@ const text = (label: string, min: number, max: number, req = `${label} requis`) 
 const optionalText = (label: string, max: number) =>
   z.string().trim().max(max, `${label} : ${max} caractères maximum`).optional();
 const oneOf = (list: readonly string[], message: string) => z.string({ error: message }).refine((v) => list.includes(v), message);
+const requestSubject = z.string({ error: 'Matière : champ requis' }).trim()
+  .min(1, 'Matière : champ requis')
+  .max(SUBJECT_MAX_LENGTH, `Matière : ${SUBJECT_MAX_LENGTH} caractères maximum`);
 const email = z.string({ error: 'Adresse e-mail invalide' }).trim().toLowerCase().max(120, 'E-mail trop long').pipe(z.email('Adresse e-mail invalide'));
 const password = z.string({ error: 'Mot de passe requis' })
   .min(8, '8 caractères minimum').max(72, '72 caractères maximum')
@@ -26,7 +29,7 @@ const profileShape = {
 const requestShape = {
   title: text('Titre', 5, 100),
   description: text('Description', 20, 1000, 'Description requise'),
-  subject: oneOf(SUBJECTS, 'Matière invalide'),
+  subject: requestSubject,
   level: oneOf(LEVELS, 'Niveau invalide'),
   availability: text('Disponibilités', 3, 200, 'Disponibilités requises'),
 };
