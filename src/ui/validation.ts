@@ -1,5 +1,5 @@
 // Validation CÔTÉ CLIENT (retour immédiat). Les mêmes règles sont ré-appliquées par le serveur (schémas zod de application/validation).
-import { LEVELS, SUBJECTS } from '@/domain/constants';
+import { LEVELS, SUBJECTS, SUBJECT_MAX_LENGTH } from '@/domain/constants';
 
 type Rule = (v: any, all: Record<string, any>) => string | undefined;
 export type Schema = Record<string, Rule>;
@@ -11,6 +11,11 @@ const len = (label: string, min: number, max: number): Rule => (v) => {
   if (s.length > max) return `${label} : ${max} caractères maximum`;
 };
 const oneOf = (label: string, list: readonly string[]): Rule => (v) => (list.includes(v) ? undefined : `${label} invalide`);
+const requestSubject: Rule = (v) => {
+  const s = (v ?? '').trim();
+  if (!s) return 'Matière : champ requis';
+  if (s.length > SUBJECT_MAX_LENGTH) return `Matière : ${SUBJECT_MAX_LENGTH} caractères maximum`;
+};
 const email: Rule = (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v ?? '').trim()) ? undefined : 'Adresse e-mail invalide');
 const optionalMax = (label: string, max: number): Rule => (v) => ((v ?? '').length > max ? `${label} : ${max} caractères maximum` : undefined);
 const password: Rule = (v = '') => {
@@ -45,7 +50,7 @@ export const schemas = {
   request: {
     title: len('Titre', 5, 100),
     description: len('Description', 20, 1000),
-    subject: oneOf('Matière', SUBJECTS),
+    subject: requestSubject,
     level: oneOf('Niveau', LEVELS),
     availability: len('Disponibilités', 3, 200),
   } as Schema,

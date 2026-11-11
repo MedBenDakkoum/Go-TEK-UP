@@ -1,7 +1,5 @@
-export const SUBJECTS = [
-  'Mathématiques', 'Algorithmique', 'Programmation web', 'Bases de données',
-  'Réseaux', 'Physique', 'Anglais', 'Gestion de projet', 'Autre',
-] as const;
+export { SUBJECTS } from './subjects';
+export const SUBJECT_MAX_LENGTH = 100;
 export const LEVELS = ['ING1', 'ING2', 'ING3', 'ING4', 'ING5'] as const;
 
 export const REQUEST_STATUSES = ['open', 'accepted', 'done', 'cancelled'] as const;

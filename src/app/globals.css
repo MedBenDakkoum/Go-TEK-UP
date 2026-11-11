@@ -224,6 +224,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .field-foot { display: flex; justify-content: space-between; gap: .5rem; align-items: flex-start; }
 .hint { margin: 0; color: var(--muted); font-size: .88rem; }
 .field-error { margin: 0; color: var(--danger); font-weight: 600; font-size: .9rem; }
+.combobox { position: relative; }
+.combobox-list { position: absolute; top: calc(100% + .25rem); left: 0; right: 0; z-index: 30; margin: 0; padding: .25rem; list-style: none; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); max-height: min(18rem, 50vh); overflow-y: auto; }
+.combobox-option { padding: .5rem .6rem; border-radius: 6px; cursor: pointer; overflow-wrap: anywhere; }
+.combobox-option:hover, .combobox-option.active { background: var(--sky); }
+.combobox-custom { margin-top: .25rem; border-top: 1px solid var(--line); color: var(--muted); font-style: italic; }
+.combobox-empty { padding: .6rem; color: var(--muted); }
 .counter { color: var(--muted); font-size: .8rem; white-space: nowrap; margin-left: auto; } .counter-max { color: var(--danger); font-weight: 700; }
 .alert { padding: .7rem 1rem; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); margin: .5rem 0; display: flex; gap: .5rem; align-items: center; }
 .alert-error { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }

@@ -6,6 +6,7 @@ import { LEVELS, SUBJECTS } from '@/domain/constants';
 import { api } from '../api';
 import { Field, Form } from '../components/forms';
 import { ErrorState, Loading } from '../components/parts';
+import { SubjectCombobox } from '../components/SubjectCombobox';
 import { useFetch, useForm, type FormApi } from '../hooks';
 import { useAuth } from '../providers/auth';
 import { schemas } from '../validation';
@@ -16,7 +17,7 @@ function RequestFields({ form }: { form: FormApi }) {
       <Field form={form} name="title" label="Titre" required maxLength={100} />
       <Field form={form} name="description" label="Description" as="textarea" required maxLength={1000}
         hint="Que cherchez-vous à comprendre ? Où êtes-vous bloqué ? (20 caractères minimum)" />
-      <Field form={form} name="subject" label="Matière" as="select" options={SUBJECTS} required />
+      <SubjectCombobox form={form} name="subject" label="Matière" required />
       <Field form={form} name="level" label="Niveau" as="select" options={LEVELS} required />
       <Field form={form} name="availability" label="Disponibilités" required maxLength={200} hint="Ex. : mardi et jeudi après 16h" />
     </>
