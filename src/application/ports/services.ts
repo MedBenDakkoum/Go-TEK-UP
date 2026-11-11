@@ -14,7 +14,8 @@ export interface SecureTokens {
   hash(token: string): string;
 }
 export interface Mailer {
-  send(to: string, subject: string, text: string): Promise<void>;
+  /** `html` est facultatif : il est joint à la version texte (repli pour les clients sans HTML). */
+  send(to: string, subject: string, text: string, html?: string): Promise<void>;
 }
 export type RealtimeEvent = 'notification' | 'unread' | 'message';
 export interface Realtime {
